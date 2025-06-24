@@ -1,4 +1,4 @@
 .idea
-Megatron-LM*
-Megatron-MoE*
-LM-Evaluation-Harness*
+**/__pycache__
+.vscode
+*.DS_Store

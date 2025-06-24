@@ -3,6 +3,7 @@
 set -e
 START_TIME=$SECONDS
 export CUDA_VISIBLE_DEVICES=0
+export TORCH_FORCE_NO_WEIGHTS_ONLY_LOAD=true # for PyTorch >= 2.6
 MASTER_ADDR=localhost
 MASTER_PORT=$(shuf -n 1 -i 10000-65535)
 NNODES=1
@@ -13,7 +14,8 @@ DISTRIBUTED_ARGS="--nproc_per_node $GPUS_PER_NODE --nnodes $NNODES --node_rank $
 MODEL_SIZE=$1
 HG_CKPT_PATH=$2
 MEGATRON_PATH=$3
-export PYTHONPATH=$PYTHONPATH:${MEGATRON_PATH}:${MEGATRON_PATH}/Megatron-LM-240126
+MEGATRON_PATCH_PATH=$( dirname $(dirname $( dirname ${CURRENT_DIR})))
+export PYTHONPATH=$PYTHONPATH:${MEGATRON_PATCH_PATH}:${MEGATRON_PATCH_PATH}/backends/megatron/Megatron-LM-241113
 SOURCE_CKPT_PATH=$4
 TARGET_CKPT_PATH=$5
 TP=$6
@@ -110,6 +112,7 @@ torchrun ${DISTRIBUTED_ARGS} hf2mcore.py \
     --use-mcore-models \
     --attention-dropout 0.0 \
     --hidden-dropout 0.0 \
+    --position-embedding-type rope \
     ${expert_options} \
     ${convert_options} \
     ${gqa_options} \

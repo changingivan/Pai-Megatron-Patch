@@ -2,6 +2,7 @@
 
 set -e
 export CUDA_VISIBLE_DEVICES=7
+export TORCH_FORCE_NO_WEIGHTS_ONLY_LOAD=true # for PyTorch >= 2.6
 START_TIME=$SECONDS
 MASTER_ADDR=localhost
 MASTER_PORT=$(shuf -n 1 -i 10000-65535)
@@ -9,7 +10,8 @@ MASTER_PORT=$(shuf -n 1 -i 10000-65535)
 MODEL_SIZE=$1
 HG_CKPT_PATH=$2
 MEGATRON_PATH=$3
-export PYTHONPATH=$PYTHONPATH:${MEGATRON_PATH}:${MEGATRON_PATH}/Megatron-LM-240126
+MEGATRON_PATCH_PATH=$( dirname $(dirname $( dirname ${CURRENT_DIR})))
+export PYTHONPATH=$PYTHONPATH:${MEGATRON_PATCH_PATH}:${MEGATRON_PATCH_PATH}/backends/megatron/Megatron-LM-240126
 SOURCE_CKPT_PATH=$4
 TARGET_CKPT_PATH=$5
 TP=$6
@@ -51,12 +53,14 @@ HIDDEN_SIZE=8192
 NUM_ATTN_HEADS=64
 INTERMEDIATE_SIZE=28672
 NUM_KV_HEADS=8
-VOCAB_SIZE=32000
+VOCAB_SIZE=128256
 ROPE_THETA=500000
-ROPE_THETA=10000
 gqa_options=" \
 		    --group-query-attention \
 		    --num-query-groups 8"
+
+cpu_options=" \
+            --use-cpu-initialization"
 
 elif [ $MODEL_SIZE = 8B ]; then
 
@@ -147,7 +151,7 @@ torchrun ${DISTRIBUTED_ARGS} hf2mcore.py \
     --hidden-dropout 0.0 \
     ${expert_options} \
     ${convert_options} \
-    ${gqa_options}
+    ${gqa_options} \
 
 else
 python hf2mcore_70b.py \
@@ -159,6 +163,7 @@ python hf2mcore_70b.py \
   --target_tensor_model_parallel_size ${TP} \
   --target_pipeline_model_parallel_size ${PP} \
 ${convert_options} \
+${cpu_options}
 
 fi
 

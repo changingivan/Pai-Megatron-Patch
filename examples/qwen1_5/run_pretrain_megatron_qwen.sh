@@ -3,8 +3,8 @@
 set -e
 ENV=$1
 MEGATRON_PATCH_PATH=$2
-MEGATRON_PATH=${MEGATRON_PATCH_PATH}/Megatron-LM-231007
-export PYTHONPATH=${MEGATRON_PATH}:${MEGATRON_PATCH_PATH}:$PYTHONPATH
+MEGATRON_PATCH_PATH=$( dirname $( dirname ${CURRENT_DIR}))
+export PYTHONPATH=${MEGATRON_PATCH_PATH}:${MEGATRON_PATCH_PATH}/backends/megatron/PAI-Megatron-LM-240718:$PYTHONPATH
 export CUDA_DEVICE_MAX_CONNECTIONS=1
 if [ $ENV = dsw ]; then
 export CUDA_VISIBLE_DEVICES=0,1,2,3,4,5,6,7
@@ -31,7 +31,7 @@ LR=$6
 MIN_LR=$7
 SEQ_LEN=$8
 PAD_LEN=$9
-EXTRA_VOCAB_SIZE=${10} # 293 for models smaller than 32b, 421 for those larger
+EXTRA_VOCAB_SIZE=${10} # 293 for models smaller than 14b, 421 for the others
 PR=${11}
 TP=${12}
 PP=${13}
@@ -182,7 +182,7 @@ TRAIN_ITERS=$(( ${TRAIN_TOKENS} / ${GLOBAL_BATCH_SIZE} / ${SEQ_LEN} ))
 LR_WARMUP_ITERS=$(( ${WARMUP_TOKENS}  / ${GLOBAL_BATCH_SIZE} / ${SEQ_LEN} ))
 LR_DECAY_ITERS=$(( ${TRAIN_TOKENS} /  ${GLOBAL_BATCH_SIZE} / ${SEQ_LEN} ))
 
-NAME="${ENV}-pretrain-megatron-gpt3-${MODEL_SIZE}-lr-${LR}-bs-${BATCH_SIZE}-seqlen-${SEQ_LEN}-pr-${PR}-tp-${TP}-pp-${PP}-ac-${AC}-do-${DO}-sp-${SP}-tt-${TRAIN_TOKENS}-wt-${WARMUP_TOKENS}"
+NAME="${ENV}-pretrain-megatron-qwen-${MODEL_SIZE}-lr-${LR}-bs-${BATCH_SIZE}-seqlen-${SEQ_LEN}-pr-${PR}-tp-${TP}-pp-${PP}-ac-${AC}-do-${DO}-sp-${SP}-tt-${TRAIN_TOKENS}-wt-${WARMUP_TOKENS}"
 mkdir -p "${OUTPUT_BASEPATH}/tensorboard/"
 mkdir -p "${OUTPUT_BASEPATH}/checkpoint/"
 mkdir -p "${OUTPUT_BASEPATH}/log/"
@@ -233,7 +233,7 @@ megatron_options="  \
         --num-workers 8 \
         --seed 1234 \
         --extra-vocab-size ${EXTRA_VOCAB_SIZE} \
-        --patch-tokenizer-type LLamaTokenizer \
+        --patch-tokenizer-type Qwen2Tokenizer \
         --swiglu \
         --normalization RMSNorm \
         --use-llama2-rotary-position-embeddings \

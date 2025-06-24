@@ -23,6 +23,28 @@ from collections import OrderedDict
 from transformers import AutoModelForCausalLM, AutoConfig, AutoTokenizer
 from transformers.modeling_utils import WEIGHTS_INDEX_NAME, WEIGHTS_NAME, shard_checkpoint
 
+import numpy as np
+from collections.abc import Mapping, Sequence
+@torch.inference_mode()
+def clone_state_dict(elem):
+    """clone all tensors in the elem to cpu device.
+    """
+    elem_type = type(elem)
+    if isinstance(elem, torch.Tensor):
+        elem = elem.clone()
+    elif isinstance(elem, (np.ndarray, str)):
+        pass
+    elif isinstance(elem, Mapping):
+        elem = dict(elem)
+        for k, v in elem.items():
+            elem[k] = clone_state_dict(v)
+        elem = elem_type(elem)
+    elif isinstance(elem, Sequence):
+        elem = list(elem)
+        for i in range(len(elem)):
+            elem[i] = clone_state_dict(elem[i])
+        elem = elem_type(elem)
+    return elem
 
 def add_args(parser):
     parser.add_argument('--megatron-path',
@@ -545,7 +567,7 @@ def convert_checkpoint_from_transformers_to_megatron(args):
                     f" {pp_rank}:"
                 )
                 recursive_print(None, output_state_dict[tp_rank])
-            torch.save(output_state_dict[tp_rank], checkpoint_path)
+            torch.save(clone_state_dict(output_state_dict[tp_rank]), checkpoint_path)
 
 
 def convert_checkpoint_from_megatron_to_transformers(args):
@@ -637,6 +659,12 @@ def convert_checkpoint_from_megatron_to_transformers(args):
                 key_list = key.split('.')
                 layer_id = int(key_list[2]) + pp_rank * num_layers
                 dim = 1 if 'linear_fc2' in key else 0
+
+                if "linear_fc1.layer_norm_weight" in key:
+                    params = val.to(dtype)
+                    output_state_dict[f'model.layers.{layer_id}.post_attention_layernorm.weight'] = params
+                    continue
+
                 params = torch.cat(
                     [val]
                     + [
@@ -778,7 +806,7 @@ def convert_checkpoint_from_megatron_to_transformers(args):
     if not os.path.exists(args.save_path):
         os.system(f'mkdir -p {args.save_path}')
     for shard_file, shard in shards.items():
-        torch.save(shard, os.path.join(args.save_path, shard_file))
+        torch.save(clone_state_dict(shard), os.path.join(args.save_path, shard_file))
 
     if index is None:
         print(f"Model weights saved in {os.path.join(args.save_path, WEIGHTS_NAME)}")

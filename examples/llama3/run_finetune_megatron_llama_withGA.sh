@@ -2,8 +2,8 @@
 set -e
 ENV=$1
 MEGATRON_PATCH_PATH=$2
-MEGATRON_PATH=${MEGATRON_PATCH_PATH}/Megatron-LM-231007
-export PYTHONPATH=${MEGATRON_PATH}:${MEGATRON_PATCH_PATH}:$PYTHONPATH
+MEGATRON_PATCH_PATH=$( dirname $( dirname ${CURRENT_DIR}))
+export PYTHONPATH=${MEGATRON_PATCH_PATH}:${MEGATRON_PATCH_PATH}/backends/megatron/PAI-Megatron-LM-240718:$PYTHONPATH
 export CUDA_DEVICE_MAX_CONNECTIONS=1
 if [ $ENV = dsw ]; then
 export CUDA_VISIBLE_DEVICES=0,1,2,3,4,5,6,7
@@ -191,6 +191,7 @@ megatron_options="  \
         --use-rotary-position-embeddings \
         --position-embedding-type rope \
         --untie-embeddings-and-output-weights \
+        --use-llama2-rotary-position-embeddings \
         --disable-bias-linear \
         --rotary-base 500000 \
         --attention-dropout 0.0 \

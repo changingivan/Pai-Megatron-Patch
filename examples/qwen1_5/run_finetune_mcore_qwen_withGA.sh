@@ -2,8 +2,8 @@
 set -e
 ENV=$1
 MEGATRON_PATCH_PATH=$2
-MEGATRON_PATH=${MEGATRON_PATCH_PATH}/Megatron-LM-240405
-export PYTHONPATH=${MEGATRON_PATH}:${MEGATRON_PATCH_PATH}:$PYTHONPATH
+MEGATRON_PATCH_PATH=$( dirname $( dirname ${CURRENT_DIR}))
+export PYTHONPATH=${MEGATRON_PATCH_PATH}:${MEGATRON_PATCH_PATH}/backends/megatron/PAI-Megatron-LM-240718:$PYTHONPATH
 export CUDA_DEVICE_MAX_CONNECTIONS=1
 if [ $ENV = dsw ]; then
 export CUDA_VISIBLE_DEVICES=0,1,2,3,4,5,6,7
@@ -40,13 +40,14 @@ FL=${16}
 SP=${17}
 TE=${18}
 MOE=${19}
-SAVE_INTERVAL=${20}
-DATASET_PATH=${21}
-VALID_DATASET_PATH=${22}
-PRETRAIN_CHECKPOINT_PATH=${23}
-TRAIN_ITERS=${24}
-LR_WARMUP_ITERS=${25}
-OUTPUT_BASEPATH=${26}
+EP=${20}
+SAVE_INTERVAL=${21}
+DATASET_PATH=${22}
+VALID_DATASET_PATH=${23}
+PRETRAIN_CHECKPOINT_PATH=${24}
+TRAIN_ITERS=${25}
+LR_WARMUP_ITERS=${26}
+OUTPUT_BASEPATH=${27}
 
 
 if [ $MODEL_SIZE = 0.5B ]; then
@@ -115,6 +116,17 @@ INTERMEDIATE_SIZE=24576
 MAX_POSITION_EMBEDDINGS=32768
 gqa_options=""
 
+elif [ $MODEL_SIZE = A2.7B ]; then
+
+HIDDEN_SIZE=2048
+NUM_ATTN_HEADS=16
+NUM_LAYERS=24
+INTERMEDIATE_SIZE=5632
+MOE_INTERMEDIATE_SIZE=1408
+SHARED_EXPERT_INTERMEDIATE_SIZE=5632
+MAX_POSITION_EMBEDDINGS=8192
+gqa_options=""
+
 fi
 
 if [ $AC = full ]; then
@@ -131,7 +143,9 @@ fi
 
 if [ $PR = fp16 ]; then
     pr_options=" \
-		    --fp16"
+		    --fp16 \
+            --apply-query-key-layer-scaling"
+    export NVTE_APPLY_QK_LAYER_SCALING=1
 elif [ $PR = bf16 ]; then
     pr_options=" \
         --bf16"
@@ -172,12 +186,24 @@ elif [ $TE = false ]; then
 fi
 
 if [ $MOE = true ]; then
-    moe_options=" \
-		    --moe-router-topk 1 \
-		    --num-experts 8 \
-		    --moe-aux-loss-coeff 1e-2 \
-		    --expert-model-parallel-size 1 \
-		    --moe-router-load-balancing-type aux_loss"
+    if [ $MODEL_SIZE = A2.7B ]; then
+        moe_options=" \
+            --moe-ffn-hidden-size ${MOE_INTERMEDIATE_SIZE} \
+            --shared-moe-ffn-hidden-size ${SHARED_EXPERT_INTERMEDIATE_SIZE} \
+            --enable-shared-expert \
+            --moe-router-topk 4 \
+            --num-experts 60 \
+            --moe-aux-loss-coeff 1e-2 \
+            --expert-model-parallel-size ${EP} \
+            --moe-router-load-balancing-type aux_loss"
+    else
+        moe_options=" \
+            --moe-router-topk 2 \
+            --num-experts 8 \
+            --moe-aux-loss-coeff 1e-2 \
+            --expert-model-parallel-size ${EP} \
+            --moe-router-load-balancing-type aux_loss"
+    fi
 
 elif [ $MOE = false ]; then
     moe_options=" \
@@ -200,7 +226,7 @@ fi
 
 LR_DECAY_ITERS=$(( ${TRAIN_ITERS} - ${LR_WARMUP_ITERS}))
 
-NAME="${ENV}-finetune-megatron-llama2-${MODEL_SIZE}-lr-${LR}-bs-${BATCH_SIZE}-seqlen-${SEQ_LEN}-pr-${PR}-tp-${TP}-pp-${PP}-ac-${AC}-do-${DO}-sp-${SP}-tt-${TRAIN_TOKENS}-wt-${WARMUP_ITERS}"
+NAME="${ENV}-finetune-megatron-qwen2-${MODEL_SIZE}-lr-${LR}-bs-${BATCH_SIZE}-seqlen-${SEQ_LEN}-pr-${PR}-tp-${TP}-pp-${PP}-ac-${AC}-do-${DO}-sp-${SP}-tt-${TRAIN_TOKENS}-wt-${WARMUP_ITERS}"
 mkdir -p "${OUTPUT_BASEPATH}/tensorboard/"
 mkdir -p "${OUTPUT_BASEPATH}/checkpoint/"
 mkdir -p "${OUTPUT_BASEPATH}/log/"
@@ -212,7 +238,6 @@ SAVED_PRETRAIN_CHECKPOINT_PATH="${OUTPUT_BASEPATH}/checkpoint/${NAME}"
 
 megatron_options="  \
         --save ${SAVED_PRETRAIN_CHECKPOINT_PATH} \
-        --split 99,1,0 \
         --train-data-path ${DATASET_PATH} \
         --valid-data-path ${VALID_DATASET_PATH} \
         --test-data-path ${VALID_DATASET_PATH} \
@@ -268,7 +293,8 @@ megatron_options="  \
         --use-mcore-models \
         --rotary-percent 1.0 \
         --rotary-base 1000000 \
-        --rotary-seq-len-interpolation-factor 1
+        --rotary-seq-len-interpolation-factor 1 \
+        --eod-mask-loss
         "
 
 run_cmd="torchrun $DISTRIBUTED_ARGS pretrain_mcore_qwen.py

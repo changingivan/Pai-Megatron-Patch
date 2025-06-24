@@ -1,13 +1,22 @@
 ## 快速开始
 
-
-|         |                                                  Megatron-LM-Dense                                                   |                                                  Megatron-Core-Dense                                                   |                                                  Megatron-Core-MoE                                                   | MegaBlocks-MoE |
-|:--------|:--------------------------------------------------------------------------------------------------------------------:|:----------------------------------------------------------------------------------------------------------------------:|:--------------------------------------------------------------------------------------------------------------------:|:--------------:|
-| LLama3  | [ReadMe](https://github.com/alibaba/Pai-Megatron-Patch/blob/main/examples/llama3/README.md#Megatron-LM-Dense模型训练流程)  | [ReadMe](https://github.com/alibaba/Pai-Megatron-Patch/blob/main/examples/llama3/README.md#Megatron-Core-Dense模型训练流程)  |                                                         N/A                                                          |      N/A       |
-| LLama2  | [ReadMe](https://github.com/alibaba/Pai-Megatron-Patch/blob/main/examples/llama2/README.md#Megatron-LM-Dense模型训练流程)  | [ReadMe](https://github.com/alibaba/Pai-Megatron-Patch/blob/main/examples/llama2/README.md#Megatron-Core-Dense模型训练流程)  |                                                         N/A                                                          |      N/A       |
-| Mistral | [ReadMe](https://github.com/alibaba/Pai-Megatron-Patch/blob/main/examples/mistral/README.md#Megatron-LM-Dense模型训练流程) | [ReadMe](https://github.com/alibaba/Pai-Megatron-Patch/blob/main/examples/mistral/README.md#Megatron-Core-Dense模型训练流程) | [ReadMe](https://github.com/alibaba/Pai-Megatron-Patch/blob/main/examples/mistral/README.md#Megatron-Core-MoE模型训练流程) |      N/A       |
-| Qwen1.5 | [ReadMe](https://github.com/alibaba/Pai-Megatron-Patch/blob/main/examples/qwen1_5/README.md#Megatron-LM-Dense模型训练流程) | [ReadMe](https://github.com/alibaba/Pai-Megatron-Patch/blob/main/examples/qwen1_5/README.md#Megatron-Core-Dense模型训练流程) | [ReadMe](https://github.com/alibaba/Pai-Megatron-Patch/blob/main/examples/qwen1_5/README.md#Megatron-Core-MoE模型训练流程) |      [ReadMe](https://github.com/alibaba/Pai-Megatron-Patch/blob/main/examples/qwen1_5/README.md#MegaBlocks-MoE模型训练流程)        |
-
+|             |                                                      Megatron-Core                                                       |                                             ChatLearn                                             |    verl     |
+|:------------|:------------------------------------------------------------------------------------------------------------------------:|:-------------------------------------------------------------------------------------------------:|:-----------:|
+| Qwen3       |      [ReadMe](https://github.com/alibaba/Pai-Megatron-Patch/blob/main/examples/qwen3/README.md#Megatron-Core模型训练流程)      |  [ReadMe](https://github.com/alibaba/Pai-Megatron-Patch/blob/main/examples/qwen3/README_grpo.md)  | Coming Soon |
+| QwQ         |       [ReadMe](https://github.com/alibaba/Pai-Megatron-Patch/blob/main/examples/qwq/README.md#Megatron-Core模型训练流程)       |                                                N/A                                                |     N/A     |
+| Qwen2.5-VL  |   [ReadMe](https://github.com/alibaba/Pai-Megatron-Patch/blob/main/examples/qwen2_5_vl/README.md#Megatron-Core模型训练流程)    |                                                N/A                                                |     N/A     |
+| Moonlight   |  [ReadMe](https://github.com/alibaba/Pai-Megatron-Patch/blob/main/examples/moonlight/README.md#Megatron-Core-MoE模型训练流程)  |                                            Coming Soon                                            | Coming Soon |
+| DeepSeek-V3 | [ReadMe](https://github.com/alibaba/Pai-Megatron-Patch/blob/main/examples/deepseek_v3/README.md#Megatron-Core-MoE模型训练流程) |                                            Coming Soon                                            | Coming Soon |
+| Qwen2-VL    |    [ReadMe](https://github.com/alibaba/Pai-Megatron-Patch/blob/main/examples/qwen2_vl/README.md#Megatron-Core模型训练流程)     |                                                N/A                                                |     N/A     |
+| LLaVA       |   [ReadMe](https://github.com/alibaba/Pai-Megatron-Patch/blob/main/examples/llava_mcore/README.md#Megatron-Core模型训练流程)   |                                                N/A                                                |     N/A     |
+| Qwen2.5     |  [ReadMe](https://github.com/alibaba/Pai-Megatron-Patch/blob/main/examples/qwen2_5/README.md#Megatron-Core-Dense模型训练流程)  | [ReadMe](https://github.com/alibaba/Pai-Megatron-Patch/blob/main/examples/qwen2_5/README_grpo.md) | Coming Soon |
+| LLama3.1    | [ReadMe](https://github.com/alibaba/Pai-Megatron-Patch/blob/main/examples/llama3_1/README.md#Megatron-Core-Dense模型训练流程)  |                                                N/A                                                |     N/A     |
+| LLama3      |  [ReadMe](https://github.com/alibaba/Pai-Megatron-Patch/blob/main/examples/llama3/README.md#Megatron-Core-Dense模型训练流程)   |                                                N/A                                                |     N/A     |
+| LLama2      |  [ReadMe](https://github.com/alibaba/Pai-Megatron-Patch/blob/main/examples/llama2/README.md#Megatron-Core-Dense模型训练流程)   |                                                N/A                                                |     N/A     |
+| Mistral     |     [ReadMe](https://github.com/alibaba/Pai-Megatron-Patch/blob/main/examples/mistral/README.md#Megatron-Core模型训练流程)     |                                                N/A                                                |     N/A     |
+| Qwen2       |      [ReadMe](https://github.com/alibaba/Pai-Megatron-Patch/blob/main/examples/qwen2/README.md#Megatron-Core模型训练流程)      |                                                N/A                                                |     N/A     |
+| Qwen1.5     |  [ReadMe](https://github.com/alibaba/Pai-Megatron-Patch/blob/main/examples/qwen1_5/README.md#Megatron-Core-Dense模型训练流程)  |                                                N/A                                                |     N/A     |
+| DeepSeek-V2 | [ReadMe](https://github.com/alibaba/Pai-Megatron-Patch/blob/main/examples/deepseek_v2/README.md#Megatron-Core-MoE模型训练流程) |                                                N/A                                                |     N/A     |
 
 ## Pai-Megatron-Patch是什么
 [English](./README.md) | 简体中文
@@ -23,6 +32,9 @@ Pai-Megatron-Patch是各类开源大模型和Megatron训练加速引擎之间的
 
 
 ## Technical Reports
+- [基于 Megatron 的多模态大模型训练加速技术解析](https://mp.weixin.qq.com/s/USMOkRuy-J5UpxyluqsBmg)
+- [Pai-Megatron-Patch：围绕Megatron-Core打造大模型训练加速生态](https://mp.weixin.qq.com/s/BGyiJ90ZB75s3EP74KogeA)
+- [Meta Llama3.1模型在PAI-Megatron-Patch的最佳实践](https://help.aliyun.com/zh/pai/use-cases/best-practice-for-llama-3-1-in-pai-megatron-patch?spm=a2c4g.11186623.0.0.4cef730eqWHNY7)
 - [基于Megatron-Core的稀疏大模型训练工具：阿里云MoE大模型最佳实践](https://mp.weixin.qq.com/s/DkrWEEJ7IxirwWd3qB9Bng)
 - [Mixtral-8x7B在PAI灵骏的训练指南](https://help.aliyun.com/zh/pai/use-cases/train-fine-tune-and-deploy-mixtral-by-using-intelligent-computing-lingjun)
 - [通义千问开源模型在PAI灵骏的最佳实践](https://mp.weixin.qq.com/s?__biz=Mzg4MzgxNDk2OA==&mid=2247491796&idx=1&sn=dc1d719313d794ae1aacdb07669a9545&chksm=cf430783f8348e950218bfcff861a2e6d2d92705807bf5b04f6e9268cc510ffa6e6aa2c87327#rd)
@@ -33,6 +45,35 @@ Pai-Megatron-Patch是各类开源大模型和Megatron训练加速引擎之间的
 - [阿里云PAI获得FewCLUE基于大模型的小样本学习双料冠军](https://developer.aliyun.com/article/788081?spm=a2c6h.12873639.article-detail.17.11c5383cHpFZks&tlog=yuekan_8)
 
 新功能：
+- **支持Qwen3模型使用Mcore+ChatLearn进行强化学习GRPO训练** [🔥🔥 2025.06.03]
+- **支持Qwen2.5模型使用Mcore+ChatLearn进行强化学习GRPO训练** [🔥🔥 2025.05.18]
+- **支持全系列Qwen3模型基于torch_dist权重格式的训练微调** [🔥🔥 2025.04.29]
+- **[实验性]实现用于超大参数量模型的MG/HF权重分布式转换** [🔥🔥 2025.04.16]
+- **升级完善DeepSeek-V3训练微调流程** [🔥🔥 2025.03.31]
+- **支持用Megatron-Core框架训练QwQ模型** [🔥🔥 2025.03.27]
+- **支持用Megatron-Core框架训练Qwen2.5-VL模型** [🔥🔥 2025.03.21]
+- **支持用Megatron-Core框架训练来自月之暗面KIMI的Moonlight-16B-A3B模型** [🔥🔥 2025.03.14]
+- **优化DeepSeek-V3模型转换脚本，支持DeepSeek-V3模型的专家并行转换** [🔥🔥 2025.03.14]
+- **支持用Megatron-Core框架训练DeepSeek-V3模型** [🔥🔥 2025.02.21]
+- **升级SFT微调流程** [🔥🔥 2025.02.20]
+- **升级DeepSeek-V2-MoE模型最佳实践为接入DeepSeek-V3-MoE的工程加速过渡** [🔥🔥 2025.01.16]
+- **拓展Qwen2-VL模型以支持序列并行、虚拟流水并行及TP-Comm-Overlap特性** [🔥🔥 2025.01.15]
+- **拓展Qwen2-VL模型权重转换及多轮复杂多模态数据的训练支持** [🔥🔥 2024.12.27]
+- **支持用Megatron-Core框架训练Qwen2-VL模型** [🔥🔥 2024.11.27]
+- **支持用Megatron-Core框架训练LLaVA模型** [🔥🔥 2024.11.20]
+- **添加大模型训练最优吞吐参数自动配置以及针对qwen2/2.5系列模型优化微调per seq sft loss.** [🔥🔥 2024.10.30]
+- **升级Deepseek-V2-MoE系列模型支持TE版的MLA以及流水并行CKPT转换** [🔥🔥 2024.09.26]
+- **支持用Megatron-Core框架训练Qwen2.5系列模型** [🔥🔥 2024.09.20]
+- **支持Qwen2及LLaMA-3.1系列模型SFT的Sequence Packing技术.** [🔥🔥 2024.09.13]
+- **升级Qwen2系列模使用Flash-Attention 3, Offloading, Comm-Overlapping训练微调** [🔥🔥 2024.08.23]
+- **支持LLaMA-3.1系列模使用Flash-Attention3训练微调** [🔥🔥 2024.08.23]
+- **支持用Megatron-Core框架训练LLaMA-3.1系列模型** [🔥🔥 2024.08.23]
+- **支持自动优化器卸载.** [🔥🔥 2024.07.25]
+- **支持静态优化器卸载.** [🔥🔥 2024.07.15]
+- **支持用Megatron-Core框架训练qwen-2-MoE系列模型** [🔥🔥 2024.06.19]
+- **支持用Megatron-Core框架训练qwen-2-Dense系列模型** [🔥🔥 2024.06.12]
+- **支持用Megatron-Core框架训练deepseek-v2-MoE系列模型** [🔥🔥 2024.05.30]
+- **支持用Megatron-Core框架训练qwen1.5-MoE系列模型** [🔥🔥 2024.05.13]
 - **支持用Megatron-LM和Megatron-Core框架训练llama3系列模型** [🔥🔥 2024.04.21]
 - **支持用Megatron-Core框架训练qwen1.5系列模型** [🔥🔥 2024.03.20]
 - **支持用Megatron-LM框架训练qwen1.5系列模型** [🔥🔥 2024.02.28]
@@ -74,9 +115,17 @@ Pai-Megatron-Patch中包含模型库，分词器，模型转换，强化学习�
 
 
 ## 技术交流群
-欢迎使用[钉钉](https://www.dingtalk.com/en)扫描如下的二维码进群交流
+欢迎使用[钉钉](https://www.dingtalk.com/en)扫描如下的二维码进群交流, 1和2群已满，请加3群。
 <div align=center>
 <img src=qr.png width=600 height=450 />
+</div>
+
+<div align=center>
+<img src=qr2.png width=600 height=450 />
+</div>
+
+<div align=center>
+<img src=qr3.png width=600 height=450 />
 </div>
 
 ## 许可证

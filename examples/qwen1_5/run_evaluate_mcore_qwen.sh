@@ -3,8 +3,8 @@
 set -e
 ENV=$1
 MEGATRON_PATCH_PATH=$2
-MEGATRON_PATH=${MEGATRON_PATCH_PATH}/Megatron-LM-240126
-export PYTHONPATH=${MEGATRON_PATH}:${MEGATRON_PATCH_PATH}:$PYTHONPATH
+MEGATRON_PATCH_PATH=$( dirname $( dirname ${CURRENT_DIR}))
+export PYTHONPATH=${MEGATRON_PATCH_PATH}:${MEGATRON_PATCH_PATH}/backends/megatron/PAI-Megatron-LM-240718:$PYTHONPATH
 export CUDA_DEVICE_MAX_CONNECTIONS=1
 if [ $ENV = dsw ]; then
 export CUDA_VISIBLE_DEVICES=7
@@ -98,7 +98,9 @@ fi
 
 if [ $PR = fp16 ]; then
     pr_options=" \
-		    --fp16"
+		    --fp16 \
+            --apply-query-key-layer-scaling"
+    export NVTE_APPLY_QK_LAYER_SCALING=1
 elif [ $PR = bf16 ]; then
     pr_options=" \
         --bf16"

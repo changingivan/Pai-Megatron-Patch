@@ -2,8 +2,8 @@
 set -e
 ENV=$1
 MEGATRON_PATCH_PATH=$2
-MEGATRON_PATH=${MEGATRON_PATCH_PATH}/Megatron-LM-240405
-export PYTHONPATH=${MEGATRON_PATH}:${MEGATRON_PATCH_PATH}:$PYTHONPATH
+MEGATRON_PATCH_PATH=$( dirname $( dirname ${CURRENT_DIR}))
+export PYTHONPATH=${MEGATRON_PATCH_PATH}:${MEGATRON_PATCH_PATH}/backends/megatron/PAI-Megatron-LM-240718:$PYTHONPATH
 export CUDA_DEVICE_MAX_CONNECTIONS=1
 if [ $ENV = dsw ]; then
 export CUDA_VISIBLE_DEVICES=0,1,2,3,4,5,6,7
@@ -30,7 +30,7 @@ LR=$6
 MIN_LR=$7
 SEQ_LEN=$8
 PAD_LEN=$9
-EXTRA_VOCAB_SIZE=${10} # 293 for models smaller than 32b, 421 for those larger
+EXTRA_VOCAB_SIZE=${10} # 293 for models smaller than 14b, 421 for the others
 PR=${11}
 TP=${12}
 PP=${13}
@@ -113,6 +113,17 @@ INTERMEDIATE_SIZE=24576
 MAX_POSITION_EMBEDDINGS=32768
 gqa_options=""
 
+elif [ $MODEL_SIZE = A2.7B ]; then
+
+HIDDEN_SIZE=2048
+NUM_ATTN_HEADS=16
+NUM_LAYERS=24
+INTERMEDIATE_SIZE=5632
+MOE_INTERMEDIATE_SIZE=1408
+SHARED_EXPERT_INTERMEDIATE_SIZE=5632
+MAX_POSITION_EMBEDDINGS=8192
+gqa_options=""
+
 fi
 
 if [ $AC = full ]; then
@@ -129,7 +140,9 @@ fi
 
 if [ $PR = fp16 ]; then
     pr_options=" \
-		    --fp16"
+		    --fp16 \
+            --apply-query-key-layer-scaling"
+    export NVTE_APPLY_QK_LAYER_SCALING=1
 elif [ $PR = bf16 ]; then
     pr_options=" \
         --bf16"
@@ -170,12 +183,24 @@ elif [ $TE = false ]; then
 fi
 
 if [ $MOE = true ]; then
-    moe_options=" \
-		    --moe-router-topk 2 \
-		    --num-experts 8 \
-		    --moe-aux-loss-coeff 1e-2 \
-		    --expert-model-parallel-size 1 \
-		    --moe-router-load-balancing-type aux_loss"
+    if [ $MODEL_SIZE = A2.7B ]; then
+        moe_options=" \
+            --moe-ffn-hidden-size ${MOE_INTERMEDIATE_SIZE} \
+            --shared-moe-ffn-hidden-size ${SHARED_EXPERT_INTERMEDIATE_SIZE} \
+            --enable-shared-expert \
+            --moe-router-topk 4 \
+            --num-experts 60 \
+            --moe-aux-loss-coeff 1e-2 \
+            --expert-model-parallel-size 4 \
+            --moe-router-load-balancing-type aux_loss"
+    else
+        moe_options=" \
+            --moe-router-topk 2 \
+            --num-experts 8 \
+            --moe-aux-loss-coeff 1e-2 \
+            --expert-model-parallel-size 1 \
+            --moe-router-load-balancing-type aux_loss"
+    fi
 
 elif [ $MOE = false ]; then
     moe_options=" \

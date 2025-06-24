@@ -13,6 +13,7 @@ import gzip
 import glob
 import torch
 import numpy as np
+#import ftfy
 import multiprocessing
 try:
     import nltk
@@ -22,7 +23,8 @@ except ImportError:
 
 from megatron.core.datasets import indexed_dataset
 from megatron_patch.tokenizer import build_tokenizer
-
+manager = multiprocessing.Manager()
+token_count_queue = multiprocessing.Queue()
 
 class IdentitySplitter(object):
     def tokenize(self, *text):
@@ -32,6 +34,7 @@ class IdentitySplitter(object):
 class Encoder(object):
     def __init__(self, args):
         self.args = args
+        self.total_token_count = 0  # add total_token_count
 
     def initializer(self):
         # Use Encoder class as a container for global data
@@ -55,19 +58,25 @@ class Encoder(object):
     def split(self, json_line):
         data = json.loads(json_line)
         output = {}
+        total_token_count = 0
         for key in self.args.json_keys:
             text = data[key]
             max_len = 1000000
             tokens_list = [Encoder.splitter.tokenize(text[i:i+max_len]) for i in range(0, len(text), max_len)]
             output[key] = [tokens for partial in tokens_list for tokens in partial]
-        return json.dumps(output), len(json_line)
+            total_token_count += sum(len(tokens) for partial in tokens_list for tokens in partial)
+        return json.dumps(output), len(json_line), total_token_count
 
     def encode(self, json_line):
-        data = json.loads(json_line)
+        try:
+            data = json.loads(json_line)
+        except:
+            return {}, {}, 0, 0
         ids = {}
         lens = {}
         for key in self.args.json_keys:
             text = data[key]
+            #text = ftfy.fix_text(text)
             if isinstance(text, list):
                 sentences = text
             else:
@@ -75,13 +84,22 @@ class Encoder(object):
             doc_ids = []
             sentence_lens = []
             for sentence in sentences:
-                #sentence_ids = Encoder.tokenizer.tokenize(sentence)
-                sentence_ids = Encoder.tokenizer(sentence, add_special_tokens=False)['input_ids']
-                if max(sentence_ids) >= Encoder.tokenizer.vocab_size:
-                    print(text)
-                    print(max(sentence_ids))
+                if self.args.patch_tokenizer_type in ["DeepSeekV2Tokenizer", "Qwen3Tokenizer", "Qwen2Tokenizer", "LLama3Tokenizer", "LLama2Tokenizer"]:
+                    sentence_ids = Encoder.tokenizer.tokenizer(sentence, add_special_tokens=False)['input_ids']
+                elif self.args.patch_tokenizer_type == "GPT2BPETokenizer":
+                    sentence_ids = Encoder.tokenizer.tokenize(sentence)
+                else:
+                    sentence_ids = Encoder.tokenizer(sentence, add_special_tokens=False)['input_ids']
+                if not sentence_ids:
+                    print(f"tokenizer error sentence_ids is empty :\n {text} \n")
                     continue
+
+                if max(sentence_ids) >= Encoder.tokenizer.vocab_size:
+                    print(f"tokenizer error max(sentence_ids) >= Encoder.tokenizer.vocab_size :\n {text}\n {max(sentence_ids)}")
+                    continue
+                
                 if len(sentence_ids) > 0:
+                    self.total_token_count += len(sentence_ids)  # increase total token
                     doc_ids.extend(sentence_ids)
                     sentence_lens.append(len(sentence_ids))
             if len(doc_ids) > 0 and self.args.append_eod:
@@ -89,7 +107,7 @@ class Encoder(object):
                 sentence_lens[-1] += 1
             ids[key] = doc_ids
             lens[key] = sentence_lens
-        return ids, lens, len(json_line)
+        return ids, lens, len(json_line), self.total_token_count
 
 
 class Partition(object):
@@ -97,13 +115,13 @@ class Partition(object):
         self.args = args
         self.workers = workers
 
-    def print_processing_stats(self, count, proc_start, total_bytes_processed):
+    def print_processing_stats(self, count, proc_start, total_bytes_processed, total_token_count):
         if count % self.args.log_interval == 0:
             current = time.time()
             elapsed = current - proc_start
             mbs = total_bytes_processed/elapsed/1024/1024
             print(f"Processed {count} documents",
-                  f"({count/elapsed} docs/s, {mbs} MB/s).",
+                  f"({count/elapsed} docs/s, {mbs} MB/s). Total tokens: {total_token_count}.",
                   file=sys.stderr)
 
     def split_sentences(self, file_name):
@@ -118,10 +136,12 @@ class Partition(object):
 
         proc_start = time.time()
         total_bytes_processed = 0
-        for i, (doc, bytes_processed) in enumerate(split_docs, start=1):
+        total_token_count = 0
+        for i, (doc, bytes_processed, current_token_count) in enumerate(split_docs, start=1):
             total_bytes_processed += bytes_processed
+            total_token_count += current_token_count
             fout.write(doc + "\n")
-            self.print_processing_stats(i, proc_start, total_bytes_processed)
+            self.print_processing_stats(i, proc_start, total_bytes_processed, total_token_count)
 
         fin.close()
         fout.close()
@@ -159,12 +179,17 @@ class Partition(object):
         startup_end = time.time()
         proc_start = time.time()
         total_bytes_processed = 0
+        total_token_count = 0  # add token count for process json file
         print("Time to startup:", startup_end - startup_start)
-        for i, (doc, sentence_lens, bytes_processed) in enumerate(encoded_docs, start=1):
+        for i, (doc, sentence_lens, bytes_processed, current_token_count) in enumerate(encoded_docs, start=1):
             total_bytes_processed += bytes_processed
+            total_token_count += current_token_count  # update token count
             for key in doc.keys():
                 builders[key].add_document(doc[key], sentence_lens[key])
-            self.print_processing_stats(i, proc_start, total_bytes_processed)
+            self.print_processing_stats(i, proc_start, total_bytes_processed, total_token_count)
+
+        print(f"Total token count: {total_token_count}")  #print total token 
+        token_count_queue.put(total_token_count) 
 
         fin.close()
         builders[key].finalize(output_idx_files[key])
@@ -183,10 +208,10 @@ def get_args():
                        help='Keep newlines between sentences when splitting.')
 
     group = parser.add_argument_group(title='tokenizer')
-    group.add_argument('--tokenizer-type', type=str, required=True,
+    group.add_argument('--tokenizer-type', type=str, required=False, default='GPT2BPETokenizer',
                        choices=['BertWordPieceLowerCase','BertWordPieceCase',
                                 'GPT2BPETokenizer', 'SentencePieceTokenizer',
-                                'GPTSentencePieceTokenizer', 'Llama2Tokenizer',
+                                'GPTSentencePieceTokenizer', 'LLama2Tokenizer',
                                 'NullTokenizer'],
                        help='What type of tokenizer to use.')
     group.add_argument('--tokenizer-model', type=str, default=None,
@@ -221,7 +246,7 @@ def get_args():
         '--patch-tokenizer-type',
         type=str,
         required=True,
-        choices=['Qwen2Tokenizer', 'LLamaTokenizer'],
+        choices=['Qwen3Tokenizer', 'Qwen2Tokenizer', 'LLamaTokenizer', 'DeepSeekV2Tokenizer', 'LLama3Tokenizer', 'LLama2Tokenizer', 'GPT2BPETokenizer'],
         help='What type of tokenizer to use.',
     )
     group.add_argument('--load',
@@ -293,7 +318,8 @@ def main():
             'output_prefix': args.output_prefix}
         in_ss_out_names.append(file_names)
     else:
-        in_file_names = glob.glob(args.input)
+        file_list = os.listdir(args.input)
+        in_file_names = [os.path.join(args.input, file) for file in file_list]
 
         # Count total number of lines across .jsonl files
         if args.keep_sequential_samples:
@@ -409,7 +435,12 @@ def main():
                                                              key, level)
             builders[key].add_index(full_partition_output_prefix)
         builders[key].finalize(output_idx_files[key])
+    # count all process token num
+    total_token_count = 0
+    while not token_count_queue.empty():
+        total_token_count += token_count_queue.get()
 
+    print(f"Total tokens processed: {total_token_count}")
 
 if __name__ == '__main__':
 

@@ -27,6 +27,7 @@ from megatron_patch.data.utils import get_batch_on_this_tp_rank_original
 from megatron_patch.data import build_pretrain_dataset_from_original
 from megatron_patch.model.qwen1_5.layer_specs import get_gpt_layer_with_transformer_engine_spec
 from megatron_patch.model.qwen1_5.model import GPTModel
+from megatron_patch.model.qwen1_5.transformer_config import QwenTransformerConfig
 from megatron_patch.arguments import get_patch_args
 from megatron_patch.tokenizer import get_tokenizer, build_tokenizer
 import torch._dynamo
@@ -49,7 +50,7 @@ def model_provider(pre_process=True, post_process=True) -> Union[GPTModel, megat
     build_tokenizer(args)
     print_rank_0('building GPT model ...')
     # Experimental loading arguments from yaml
-    config = core_transformer_config_from_args(args)
+    config = core_transformer_config_from_args(args, QwenTransformerConfig)
     if args.use_mcore_models:
         if args.spec is not None:
             transformer_layer_spec = import_module(args.spec)
@@ -90,7 +91,7 @@ def get_batch(data_iterator):
 
     # TODO: this is pretty hacky, find a better way
     if (not mpu.is_pipeline_first_stage()) and (not mpu.is_pipeline_last_stage()):
-        return None, None, None, None, None
+        return None, None, None, None, None, None
 
     args = get_args()
 
@@ -106,6 +107,14 @@ def get_batch(data_iterator):
         # slice batch along sequence dimension for context parallelism
         batch = get_batch_on_this_cp_rank(batch)
 
+        return (
+            batch['tokens'],
+            batch['labels'],
+            batch['loss_mask'],
+            batch['attention_mask'],
+            batch['position_ids'],
+            None
+        )
     else:
         raise ValueError("please set correct --dataset ")
 
@@ -154,7 +163,7 @@ def forward_step(data_iterator, model: GPTModel):
 
     # Get the batch.
     timers('batch-generator', log_level=2).start()
-    tokens, labels, loss_mask, attention_mask, position_ids = get_batch(
+    tokens, labels, loss_mask, attention_mask, position_ids, _ = get_batch(
         data_iterator)
     timers('batch-generator').stop()
 

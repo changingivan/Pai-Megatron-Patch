@@ -45,7 +45,7 @@ class Encoder(object):
         for key in self.args.jsonl_keys:
             doc_ids = []
             try:
-                text_ids = Encoder.tokenizer(text, add_special_tokens=False)['input_ids']
+                text_ids = Encoder.tokenizer(text, add_special_tokens=False, padding='do_not_pad',max_length=32768,truncation=True)['input_ids']
                 """
                 text_ids = Encoder.tokenizer(text, add_special_tokens=False, padding='max_length',
                                              max_length=2047, truncation=True)['input_ids']
@@ -54,12 +54,18 @@ class Encoder(object):
                     print(text)
                     print(max(text_ids))
                     continue
-            except:
+            except Exception as e:
+                print(f"Error encoding text: {e}")  # print error message
                 continue
             if len(text_ids) > 0:
                 doc_ids.append(text_ids)
             if self.args.append_eod:
-                doc_ids[-1].append(Encoder.tokenizer.eod)
+                if hasattr(Encoder.tokenizer, 'eos_token_id'):
+                    doc_ids[-1].append(Encoder.tokenizer.eos_token_id)
+                elif hasattr(Encoder.tokenizer, 'eod_id'):
+                    doc_ids[-1].append(Encoder.tokenizer.eod_id)
+                else:
+                    doc_ids[-1].append(Encoder.tokenizer.eod)
                 #doc_ids[-1].append(Encoder.tokenizer.pad_token_id)
             ids[key] = doc_ids
         return ids, len(text)
@@ -89,7 +95,7 @@ def get_args():
             'ChatGLMTokenizerFromHF', 'GPT2BPETokenizer',
             'GLM10BZHTokenizerFromHF', 'IcetkGLM130BTokenizer',
             'LLamaTokenizer', 'FalconTokenizer', 'OPTTokenizer',
-            'StarcoderTokenizerFromHF', 'QwenTokenizer', 'MistralTokenizer'
+            'StarcoderTokenizerFromHF', 'QwenTokenizer','Qwen2Tokenizer', 'MistralTokenizer'
         ],
         help='What type of tokenizer to use.',
     )
@@ -207,7 +213,7 @@ def main():
                                                       'document')
         output_idx_files[key] = '{}_{}_{}.idx'.format(args.output_prefix, key,
                                                       'document')
-        builders[key] = indexed_dataset.MMapIndexedDatasetBuilder(
+        builders[key] = indexed_dataset.IndexedDatasetBuilder(
             output_bin_files[key],
             dtype=indexed_dataset.DType.optimal_dtype(tokenizer.vocab_size),
         )
